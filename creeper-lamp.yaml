@@ -1,0 +1,103 @@
+substitutions:
+  hostname: creeper-lamp
+  friendly_name: "Creeper Lamp"
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  captive_password: !secret captive_password
+
+packages:
+  piit79.base:
+    url: https://github.com/piit79/esphome-configs
+    file: base.yaml
+    refresh: 1min
+
+dashboard_import:
+  package_import_url: github://piit79/esphome-configs/creeper-lamp.yaml
+
+esphome:
+  project:
+    name: "piit79.creeper-lamp"
+    version: "1.0.0"
+
+esp32:
+  board: lolin_s2_mini
+
+globals:
+  - id: brightness_levels
+    type: int[3]
+    restore_value: no
+    initial_value: "{20, 40, 80}"
+  - id: brightness_idx
+    type: int
+    restore_value: no
+    initial_value: "0"
+  - id: light_state
+    type: int
+    restore_value: no
+    initial_value: "0"
+  - id: last_press_millis
+    type: unsigned long int
+    restore_value: no
+    initial_value: "0"
+
+binary_sensor:
+  - platform: gpio
+    name: button
+    internal: true
+    pin:
+      number: GPIO3
+      mode:
+        input: true
+        pullup: true
+    on_press:
+        then:
+          - lambda: !lambda |-
+              auto millis_now = millis();
+              auto diff_millis = millis_now - id(last_press_millis);
+              ESP_LOGD("lambda", "Time diff: %d ms", diff_millis);
+              id(last_press_millis) = millis_now;
+              auto call = id(light1).make_call();
+              auto state = 0;
+              if (!id(light_state)) {
+                // Light is off - turn it on
+                state = 1;
+              } else {
+                // Light is on
+                if (diff_millis < 1000) {
+                  // Quick press - keep it on and set the next brightness level
+                  state = 1;
+                  call.set_transition_length(100);
+                  id(brightness_idx) = (id(brightness_idx) + 1) % 3;
+                }
+                // Turn it off on "new" press (after 1 s delay)
+              }
+              if (state) {
+                auto b = id(brightness_levels)[id(brightness_idx)]/100.0;
+                call.set_brightness(b);
+              }
+              call.set_state(state);
+              id(light_state) = state;
+              call.perform();
+
+  - platform: gpio
+    name: "Switch"
+    icon: mdi:toggle-switch-off-outline
+    pin:
+      number: GPIO7
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+
+output:
+  - platform: ledc
+    id: pwm_gpio5
+    pin: GPIO5
+    frequency: 1000
+
+light:
+  - platform: monochromatic
+    id: light1
+    output: pwm_gpio5
+    name: None
+    icon: mdi:lamp-outline
