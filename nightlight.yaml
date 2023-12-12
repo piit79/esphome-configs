@@ -1,0 +1,56 @@
+substitutions:
+  hostname: nightlight
+  friendly_name: Nightlight
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  captive_password: !secret captive_password
+
+packages:
+  piit79.base:
+    url: https://github.com/piit79/esphome-configs
+    file: base.yaml
+    refresh: 1min
+
+dashboard_import:
+  package_import_url: github://piit79/esphome-configs/nightlight.yaml
+
+esphome:
+  name: ${hostname}
+  project:
+    name: "piit79.nightlight"
+    version: "1.0.0"
+
+esp8266:
+  board: esp12e
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO4
+    name: "Motion"
+    device_class: motion
+
+output:
+  - platform: esp8266_pwm
+    pin: GPIO5
+    frequency: 200 Hz
+    id: output_led
+
+spi:
+  mosi_pin: GPIO13
+  clk_pin: GPIO14
+
+light:
+  - platform: spi_led_strip
+    num_leds: 8
+    data_rate: 1MHz
+    name: None
+
+  - platform: monochromatic
+    name: "LED"
+    output: output_led
+    icon: mdi:led-off
+
+switch:
+  - platform: gpio
+    pin: GPIO15
+    name: "Buzzer"
