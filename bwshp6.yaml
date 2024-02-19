@@ -1,0 +1,200 @@
+# Blitzwolf SHP6 15A Power Monitoring Plug
+# https://templates.blakadder.com/blitzwolf_SHP6-15A.html
+substitutions:
+  hostname: bwshp1
+  friendly_name: "Blitzwolf SHP6"
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  captive_password: !secret captive_password
+  # Higher value gives lower watt readout
+  current_res: '0.00290'
+  # Lower value gives lower voltage readout
+  voltage_div: '732.5'
+
+packages:
+  piit79.base:
+    url: https://github.com/piit79/esphome-configs
+    file: base.yaml
+    refresh: always
+
+dashboard_import:
+  package_import_url: github://piit79/esphome-configs/bwshp6.yaml@main
+
+esphome:
+  project:
+    name: "piit79.bwshp6"
+    version: "1.0.0"
+  name_add_mac_suffix: false
+
+esp8266:
+  board: esp8285
+
+number:
+  - platform: template
+    id: on_power
+    name: "On Power"
+    unit_of_measurement: W
+    min_value: 1
+    max_value: 3000
+    initial_value: 20
+    step: 1
+    optimistic: true
+    restore_value: true
+    on_value:
+      then:
+        - lambda: "id(device_running).set_upper_threshold(x);"
+
+  - platform: template
+    id: on_delay
+    name: "On Delay"
+    unit_of_measurement: s
+    min_value: 0
+    max_value: 120
+    initial_value: 10
+    step: 1
+    optimistic: true
+    restore_value: true
+
+  - platform: template
+    id: off_power
+    name: "Off Power"
+    unit_of_measurement: W
+    min_value: 1
+    max_value: 3000
+    initial_value: 5
+    step: 1
+    optimistic: true
+    restore_value: true
+    on_value:
+      then:
+        - lambda: "id(device_running).set_lower_threshold(x);"
+
+  - platform: template
+    id: off_delay
+    name: "Off Delay"
+    unit_of_measurement: s
+    min_value: 0
+    max_value: 120
+    initial_value: 10
+    step: 1
+    optimistic: true
+    restore_value: true
+
+binary_sensor:
+  - platform: gpio
+    id: button1
+    internal: true
+    pin:
+      number: GPIO13
+      inverted: true
+    on_press:
+      - switch.toggle: switch_socket
+
+  - platform: analog_threshold
+    id: device_running
+    name: "Device Running"
+    sensor_id: power_sensor_raw
+    threshold:
+      upper: 3000
+      lower: 0
+    filters:
+      - delayed_on: !lambda "return id(on_delay).state * 1000;"
+      - delayed_off: !lambda "return id(off_delay).state * 1000;"
+    on_press:
+      - switch.turn_on: led_blue
+    on_release:
+      - switch.turn_off: led_blue
+
+switch:
+- platform: gpio
+  name: "Socket"
+  id: switch_socket
+  icon: mdi:power-socket-eu
+  pin: GPIO15
+  on_turn_on:
+    - switch.turn_on: led_red
+    - lambda: |-
+        id(hlw8012_sensor).stop_poller();
+        id(hlw8012_sensor).set_update_interval(1000);
+        id(hlw8012_sensor).start_poller();
+  on_turn_off:
+    - switch.turn_off: led_red
+    - switch.turn_off: led_blue
+    - lambda: |-
+        id(hlw8012_sensor).stop_poller();
+        id(hlw8012_sensor).set_update_interval(15000);
+        id(hlw8012_sensor).start_poller();
+
+- platform: gpio
+  id: led_red
+  internal: true
+  pin:
+    number: GPIO0
+    inverted: true
+
+- platform: gpio
+  id: led_blue
+  internal: true
+  pin:
+    number: GPIO2
+    inverted: true
+
+sensor:
+  - platform: hlw8012
+    id: hlw8012_sensor
+    sel_pin:
+      number: GPIO12
+      inverted: true
+    cf_pin: GPIO5
+    cf1_pin: GPIO4
+    current_resistor: ${current_res}
+    voltage_divider: ${voltage_div}
+    voltage:
+      id: voltage_sensor_raw
+      internal: true
+      unit_of_measurement: V
+      accuracy_decimals: 1
+    current:
+      id: current_sensor_raw
+      internal: true
+      unit_of_measurement: A
+      accuracy_decimals: 3
+    power:
+      id: power_sensor_raw
+      internal: true
+      unit_of_measurement: W
+      accuracy_decimals: 1
+    change_mode_every: 2
+    update_interval: 15s
+
+  - platform: template
+    name: "Voltage"
+    icon: mdi:sine-wave
+    unit_of_measurement: V
+    accuracy_decimals: 1
+    lambda: "return id(voltage_sensor_raw).state;"
+    update_interval: 60s
+
+  - platform: template
+    name: "Current"
+    icon: mdi:current-ac
+    unit_of_measurement: A
+    accuracy_decimals: 3
+    lambda: "return id(current_sensor_raw).state;"
+    update_interval: 15s
+
+  - platform: template
+    name: "Power"
+    icon: mdi:flash
+    unit_of_measurement: W
+    accuracy_decimals: 1
+    lambda: "return id(power_sensor_raw).state;"
+    update_interval: 15s
+
+  - platform: total_daily_energy
+    name: "Total Daily Energy"
+    power_id: power_sensor_raw
+    unit_of_measurement: kWh
+    filters:
+      - multiply: 0.001  # Wh to kWh
+      - delta: 0.001  # Only publish when there's at least 1 Wh of difference
