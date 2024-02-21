@@ -19,13 +19,33 @@ esphome:
   name: ${hostname}
   project:
     name: "piit79.mi-desk-lamp"
-    version: "1.0.0"
+    version: "1.0.1"
+  on_boot:
+    priority: 600
+    then:
+      - lambda: |-
+          auto max_temp = id(light1).get_traits().get_max_mireds();
+          auto call = id(light1).turn_on();
+          call.set_brightness(0.15f);
+          call.set_color_temperature(max_temp);
+          call.perform();
+          id(light1).turn_off().perform();
 
 esp8266:
   board: esp_wroom_02
 
 # dallas:
 #   - pin: GPIO3
+
+binary_sensor:
+  - platform: gpio
+    id: encoder_button
+    pin:
+      number: GPIO2
+      inverted: true
+    on_click:
+      then:
+        - light.toggle: light1
 
 sensor:
   - platform: rotary_encoder
@@ -42,19 +62,38 @@ sensor:
             then:
               # If Button is pressed, change CW/WW
               - lambda: |-
+                  if (!x) {
+                    return;
+                  }
                   auto min_temp = id(light1).get_traits().get_min_mireds();
                   auto max_temp = id(light1).get_traits().get_max_mireds();
                   auto cur_temp = id(light1).current_values.get_color_temperature();
-                  auto new_temp = max(min_temp, min(max_temp, cur_temp + (x * 10)));
+                  auto new_temp = max(min_temp, min(max_temp, cur_temp + (x * 15)));
                   auto call = id(light1).turn_on();
                   call.set_color_temperature(new_temp);
                   call.perform();
             else:
               # If Button is not pressed, change brightness
-              - light.dim_relative:
-                  id: light1
-                  relative_brightness: !lambda |-
-                    return x / 33.3;
+              - lambda: |-
+                  if (!x) {
+                    return;
+                  }
+                  const float f = 1.11f;
+                  const float min_b = 0.03f;
+                  float cur_b = id(light1).current_values.is_on() ? id(light1).current_values.get_brightness() : 0.0f;
+                  float new_b;
+                  if (x > 0) {
+                    new_b = max(min(cur_b * f, 1.0f), min_b);
+                  } else {
+                    new_b = cur_b / f;
+                    if (new_b < min_b) {
+                      new_b = 0.0f;
+                    }
+                  }
+                  auto call = id(light1).turn_on();
+                  call.set_brightness(new_b);
+                  call.perform();
+
         # Reset Rotation to 0
         - sensor.rotary_encoder.set_value:
             id: rotation
@@ -62,34 +101,26 @@ sensor:
 
   # - platform: dallas
   #   address: 0x13000002C2522428
-  #   name: "${friendly_name} Temperature"
-
-binary_sensor:
-  - platform: gpio
-    id: encoder_button
-    pin:
-      number: GPIO2
-      inverted: true
-    on_click:
-      then:
-        - light.toggle: light1
+  #   name: "Temperature"
 
 output:
   - platform: esp8266_pwm
     pin: GPIO4
-    id: output_cold
+    id: output_cw
+
   - platform: esp8266_pwm
     pin: GPIO5
-    id: output_warm
+    id: output_ww
 
 light:
   - platform: cwww
     id: light1
-    default_transition_length: 0s
-    constant_brightness: true
-    name: "Light"
-    cold_white: output_cold
-    warm_white: output_warm
+    name: None
+    icon: phu:yeelight-desklamp
+    cold_white: output_cw
+    warm_white: output_ww
     cold_white_color_temperature: 6500K
     warm_white_color_temperature: 2700K
+    constant_brightness: true
     gamma_correct: 0
+    default_transition_length: 0s
