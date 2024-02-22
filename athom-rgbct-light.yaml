@@ -1,0 +1,28 @@
+# Athom 15 W RGBCT Light
+substitutions:
+  hostname: athom-rgbct-light
+  friendly_name: "Athom 15 W RGBCT Light"
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  captive_password: !secret captive_password
+
+packages:
+  athom.15w-rgbct-light: github://athom-tech/athom-configs/athom-rgbct-light.yaml
+  piit79.base:
+    url: https://github.com/piit79/esphome-configs
+    file: base.yaml
+    refresh: always
+
+dashboard_import:
+  package_import_url: github://piit79/esphome-configs/athom-rgbct-light.yaml@main
+
+esphome:
+  project:
+    name: "piit79.athom-rgbct-light"
+    version: "1.0.0"
+  name_add_mac_suffix: true
+
+light:
+  - platform: rgbct
+    id: !extend rgbct_light
+    name: None
