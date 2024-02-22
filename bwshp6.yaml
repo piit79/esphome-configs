@@ -183,18 +183,15 @@ sensor:
       id: voltage_sensor_raw
       internal: true
       unit_of_measurement: V
-      accuracy_decimals: 1
     current:
       id: current_sensor_raw
       internal: true
       unit_of_measurement: A
-      accuracy_decimals: 3
     power:
       id: power_sensor_raw
       internal: true
       unit_of_measurement: W
-      accuracy_decimals: 1
-    change_mode_every: 2
+    change_mode_every: 1
     update_interval: 15s
 
   - platform: template
@@ -225,6 +222,8 @@ sensor:
     name: "Total Daily Energy"
     power_id: power_sensor_raw
     unit_of_measurement: kWh
+    accuracy_decimals: 3
+    restore: true
     filters:
       - multiply: 0.001  # Wh to kWh
       - delta: 0.001  # Only publish when there's at least 1 Wh of difference
