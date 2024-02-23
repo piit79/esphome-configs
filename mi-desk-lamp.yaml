@@ -16,10 +16,11 @@ dashboard_import:
   package_import_url: github://piit79/esphome-configs/mi-desk-lamp.yaml
 
 esphome:
-  name: ${hostname}
   project:
     name: "piit79.mi-desk-lamp"
     version: "1.0.1"
+  name: ${hostname}
+  friendly_name: ${friendly_name}
   on_boot:
     priority: 600
     then:

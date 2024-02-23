@@ -15,10 +15,11 @@ dashboard_import:
   package_import_url: github://piit79/esphome-configs/nightlight.yaml
 
 esphome:
-  name: ${hostname}
   project:
     name: "piit79.nightlight"
     version: "1.0.0"
+  name: ${hostname}
+  friendly_name: ${friendly_name}
 
 esp8266:
   board: esp12e

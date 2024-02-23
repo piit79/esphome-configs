@@ -19,6 +19,8 @@ esphome:
   project:
     name: "piit79.athom-plug-v1"
     version: "1.0.0"
+  name: ${hostname}
+  friendly_name: ${friendly_name}
   name_add_mac_suffix: true
 
 esp8266:

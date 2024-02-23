@@ -20,6 +20,8 @@ esphome:
   project:
     name: "piit79.athom-rgbct-light"
     version: "1.0.0"
+  name: ${hostname}
+  friendly_name: ${friendly_name}
   name_add_mac_suffix: true
 
 light:

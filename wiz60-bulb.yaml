@@ -19,7 +19,9 @@ esphome:
   project:
     name: "piit79.wiz60-bulb"
     version: "1.0.0"
-  name_add_mac_suffix: false
+  name: ${hostname}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
 
 esp8266:
   board: esp_wroom_02
