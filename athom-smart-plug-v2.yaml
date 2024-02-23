@@ -1,0 +1,254 @@
+# Athom Smart Plug v2
+substitutions:
+  hostname: athom-smart-plug-v2
+  friendly_name: "Athom Smart Plug v2"
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  captive_password: !secret captive_password
+
+packages:
+  piit79.base:
+    url: https://github.com/piit79/esphome-configs
+    file: base.yaml
+    refresh: always
+
+dashboard_import:
+  package_import_url: github://piit79/esphome-configs/athom-smart-plug-v2.yaml@main
+
+esphome:
+  project:
+    name: "piit79.athom-smart-plug-v2"
+    version: "2.0.0"
+  name_add_mac_suffix: true
+
+esp8266:
+  board: esp8285
+  restore_from_flash: true
+
+preferences:
+  flash_write_interval: 1min
+
+wifi:
+  ap:
+    ssid: "${hostname}"  # The default hostname with esphome- prefix is >32 characters
+
+logger:
+  baud_rate: 0
+
+uart:
+  rx_pin: RX
+  baud_rate: 4800
+
+globals:
+  - id: total_energy
+    type: float
+    restore_value: yes
+    initial_value: '0.0'
+
+select:
+  - platform: template
+    name: "Restore Mode"
+    id: select_restore_mode
+    options:
+      - Always Off
+      - Always On
+      - Restore Default Off
+      - Restore Default On
+      - Restore Inverted Default Off
+      - Restore Inverted Default On
+    initial_option: "Always Off"
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: |-
+          const SwitchRestoreMode restore_modes[6] = {
+            SWITCH_ALWAYS_OFF,
+            SWITCH_ALWAYS_ON,
+            SWITCH_RESTORE_DEFAULT_OFF,
+            SWITCH_RESTORE_DEFAULT_ON,
+            SWITCH_RESTORE_INVERTED_DEFAULT_OFF,
+            SWITCH_RESTORE_INVERTED_DEFAULT_ON
+          };
+          id(switch_socket).set_restore_mode(restore_modes[i]);
+
+number:
+  - platform: template
+    id: on_power
+    name: "Running Power"
+    unit_of_measurement: W
+    min_value: 1
+    max_value: 3000
+    initial_value: 20
+    step: 1
+    optimistic: true
+    restore_value: true
+    on_value:
+      then:
+        - lambda: id(device_running).set_upper_threshold(x);
+
+  - platform: template
+    id: on_delay
+    name: "Running Delay"
+    unit_of_measurement: s
+    min_value: 0
+    max_value: 120
+    initial_value: 10
+    step: 1
+    optimistic: true
+    restore_value: true
+
+  - platform: template
+    id: off_power
+    name: "Stopped Power"
+    unit_of_measurement: W
+    min_value: 1
+    max_value: 3000
+    initial_value: 5
+    step: 1
+    optimistic: true
+    restore_value: true
+    on_value:
+      then:
+        - lambda: id(device_running).set_lower_threshold(x);
+
+  - platform: template
+    id: off_delay
+    name: "Stopped Delay"
+    unit_of_measurement: s
+    min_value: 0
+    max_value: 120
+    initial_value: 10
+    step: 1
+    optimistic: true
+    restore_value: true
+
+binary_sensor:
+  - platform: gpio
+    id: button1
+    internal: true
+    pin:
+      number: GPIO5
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - switch.toggle: switch_socket
+
+  - platform: analog_threshold
+    id: device_running
+    name: "Device Running"
+    sensor_id: sensor_power_raw
+    threshold:
+      upper: 3000
+      lower: 0
+    filters:
+      - delayed_on: !lambda "return id(on_delay).state * 1000;"
+      - delayed_off: !lambda "return id(off_delay).state * 1000;"
+    on_press:
+      - lambda: |-
+          id(led_status).turn_on().set_effect("slow_flash").perform();
+    on_release:
+      - light.turn_off: led_status
+
+switch:
+- platform: gpio
+  name: "Socket"
+  id: switch_socket
+  icon: mdi:power-socket-eu
+  pin: GPIO12
+
+light:
+  - platform: status_led
+    id: led_status
+    internal: true
+    pin:
+      number: GPIO13
+      inverted: true
+    effects:
+      - strobe:
+          name: slow_flash
+          colors:
+            - state: True
+              duration: 2s
+            - state: False
+              duration: 2s
+
+sensor:
+  - platform: cse7766
+    id: sensor_cse7766
+    current:
+      id: sensor_current_raw
+      internal: true
+      filters:
+        - lambda: if (x < 0.06) return 0.0; else return x;  // For the chip will report less than 3w power when no load is connected
+        - throttle_average: 1s
+        - filter_out: nan
+    voltage:
+      id: sensor_voltage_raw
+      internal: true
+      filters:
+        - throttle_average: 1s
+        - filter_out: nan
+    power:
+      id: sensor_power_raw
+      internal: true
+      filters:
+        - lambda: if (x < 3.0) return 0.0; else return x;  // For the chip will report less than 3w power when no load is connected
+        - throttle_average: 1s
+        - filter_out: nan
+    energy:
+      id: sensor_energy_raw
+      unit_of_measurement: kWh
+      filters:
+        - multiply: 0.001  # W to kW
+      on_value:
+        then:
+          - lambda: |-
+              static float previous_energy_value = 0.0;
+              float current_energy_value = id(sensor_energy_raw).state;
+              id(total_energy) += current_energy_value - previous_energy_value;
+              previous_energy_value = current_energy_value;
+
+  - platform: template
+    name: "Voltage"
+    icon: mdi:sine-wave
+    unit_of_measurement: V
+    accuracy_decimals: 1
+    lambda: return id(sensor_voltage_raw).state;
+    update_interval: 60s
+
+  - platform: template
+    name: "Current"
+    icon: mdi:current-ac
+    unit_of_measurement: A
+    accuracy_decimals: 3
+    lambda: return id(sensor_current_raw).state;
+    update_interval: 15s
+
+  - platform: template
+    name: "Power"
+    icon: mdi:flash
+    unit_of_measurement: W
+    accuracy_decimals: 1
+    lambda: return id(sensor_power_raw).state;
+    update_interval: 15s
+
+  - platform: template
+    name: "Total Energy"
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    icon: mdi:lightning-bolt
+    accuracy_decimals: 3
+    lambda: |-
+      return id(total_energy);
+    update_interval: 15s
+
+  - platform: total_daily_energy
+    name: "Total Daily Energy"
+    power_id: sensor_power_raw
+    unit_of_measurement: kWh
+    accuracy_decimals: 3
+    restore: true
+    filters:
+      - multiply: 0.001  # Wh to kWh
+      - delta: 0.001  # Only publish when there's at least 1 Wh of difference
