@@ -1,7 +1,7 @@
 # Blitzwolf SHP6 15A Power Monitoring Plug
 # https://templates.blakadder.com/blitzwolf_SHP6-15A.html
 substitutions:
-  hostname: bw-shp6
+  name: bw-shp6
   friendly_name: "Blitzwolf SHP6"
   wifi_ssid: !secret wifi_ssid
   wifi_password: !secret wifi_password
@@ -24,7 +24,7 @@ esphome:
   project:
     name: "piit79.bw-shp6"
     version: "1.1.0"
-  name: ${hostname}
+  name: ${name}
   friendly_name: ${friendly_name}
   name_add_mac_suffix: true
 

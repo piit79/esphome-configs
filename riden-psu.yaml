@@ -2,7 +2,7 @@ substitutions:
   # Based on https://github.com/wildekek/rdtech-esphome/blob/main/rdtech-powersupply.yaml
   # Change this model to fit your particular one
   # You can find it in Home Assistant as the device diagnostic "Model Name"
-  hostname: rd6006p
+  name: rd6006p
   friendly_name: "RD6006P"
   model: RD6006P
   device_description: "Power Supply"

@@ -1,6 +1,6 @@
 # Xiaomi Mi Desk Lamp
 substitutions:
-  hostname: mi-desk-lamp
+  name: mi-desk-lamp
   friendly_name: "Mi Desk Lamp"
   wifi_ssid: !secret wifi_ssid
   wifi_password: !secret wifi_password
@@ -19,8 +19,6 @@ esphome:
   project:
     name: "piit79.mi-desk-lamp"
     version: "1.0.1"
-  name: ${hostname}
-  friendly_name: ${friendly_name}
   on_boot:
     priority: 600
     then:

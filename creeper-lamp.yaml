@@ -1,5 +1,5 @@
 substitutions:
-  hostname: creeper-lamp
+  name: creeper-lamp
   friendly_name: "Creeper Lamp"
   wifi_ssid: !secret wifi_ssid
   wifi_password: !secret wifi_password
@@ -9,7 +9,7 @@ packages:
   piit79.base:
     url: https://github.com/piit79/esphome-configs
     file: base.yaml
-    refresh: 1min
+    refresh: always
 
 dashboard_import:
   package_import_url: github://piit79/esphome-configs/creeper-lamp.yaml
