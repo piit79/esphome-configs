@@ -213,6 +213,7 @@ sensor:
   - platform: template
     name: "Voltage"
     icon: mdi:sine-wave
+    state_class: measurement
     unit_of_measurement: V
     accuracy_decimals: 1
     lambda: return id(sensor_voltage_raw).state;
@@ -221,6 +222,7 @@ sensor:
   - platform: template
     name: "Current"
     icon: mdi:current-ac
+    state_class: measurement
     unit_of_measurement: A
     accuracy_decimals: 3
     lambda: return id(sensor_current_raw).state;
@@ -229,6 +231,7 @@ sensor:
   - platform: template
     name: "Power"
     icon: mdi:flash
+    state_class: measurement
     unit_of_measurement: W
     accuracy_decimals: 1
     lambda: return id(sensor_power_raw).state;
