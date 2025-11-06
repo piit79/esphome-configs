@@ -27,7 +27,7 @@ sensor:
   - platform: uptime
     id: sensor_uptime
     name: "Uptime"
-    unit_of_measurement: days
+    unit_of_measurement: d
     update_interval: 860s  # 0.01 * 1440 min = 14.4 min = 864 s
     accuracy_decimals: 2
     filters:
