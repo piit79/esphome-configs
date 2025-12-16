@@ -3,6 +3,7 @@ esphome:
   friendly_name: ${friendly_name}
 
 wifi:
+  min_auth_mode: WPA2
   ssid: ${wifi_ssid}
   password: ${wifi_password}
 
@@ -41,4 +42,6 @@ sensor:
 
 button:
   - platform: restart
+    id: restart_button
     name: "Restart"
+    entity_category: config
