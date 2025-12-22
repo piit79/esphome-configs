@@ -25,6 +25,8 @@ esphome:
 
 esp32:
   board: lolin_c3_mini
+  framework:
+    type: esp-idf
 
 globals:
   - id: fan_level_new
