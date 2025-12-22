@@ -127,7 +127,6 @@ light:
     chipset: ws2812
     rgb_order: GRB
     pin: GPIO7
-    rmt_channel: 0
     num_leds: 1
     default_transition_length: 0.2s
 
