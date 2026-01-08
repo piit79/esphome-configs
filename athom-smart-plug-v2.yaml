@@ -200,6 +200,7 @@ sensor:
         - filter_out: nan
     energy:
       id: sensor_energy_raw
+      internal: true
       unit_of_measurement: kWh
       filters:
         - multiply: 0.001  # W to kW
