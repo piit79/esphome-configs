@@ -204,6 +204,7 @@ sensor:
       unit_of_measurement: kWh
       filters:
         - multiply: 0.001  # W to kW
+        - throttle: 15s
       on_value:
         then:
           - lambda: |-
