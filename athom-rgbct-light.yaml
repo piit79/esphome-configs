@@ -19,10 +19,12 @@ dashboard_import:
 esphome:
   project:
     name: "piit79.athom-rgbct-light"
-    version: "1.0.0"
-  name: ${name}
-  friendly_name: ${friendly_name}
+    version: "1.0.1"
   name_add_mac_suffix: true
+
+button:
+  - platform: restart
+    id: !remove restart_button
 
 light:
   - platform: rgbct
