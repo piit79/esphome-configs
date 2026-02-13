@@ -272,11 +272,6 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°C"
 
-  - platform: wifi_signal
-    name: "Wi-Fi Signal"
-    disabled_by_default: True
-    update_interval: 60s
-
   # This sensor is an alternative for the uptime sensor, which only sends the
   # startup timestamp of the device to home assistant once
   - platform: template
@@ -296,13 +291,16 @@ text_sensor:
   - platform: wifi_info
     ip_address:
       name: "IP Address"
-      disabled_by_default: True
+      entity_category: diagnostic
+      disabled_by_default: true
     ssid:
       name: "Wi-Fi SSID"
-      disabled_by_default: True
+      entity_category: diagnostic
+      disabled_by_default: true
     bssid:
       name: "Wi-Fi BSSID"
-      disabled_by_default: True
+      entity_category: diagnostic
+      disabled_by_default: true
   - platform: template
     id: model_name
     name: "Model Name"
@@ -415,7 +413,6 @@ number:
     step: ${${model}_voltage_multiplier}
     lambda: !lambda return x * ${${model}_voltage_multiplier};
     write_lambda: !lambda return x * (1/${${model}_voltage_multiplier});
-
 
   - platform: modbus_controller
     modbus_controller_id: powersupply
