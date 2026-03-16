@@ -248,3 +248,16 @@ sensor:
     filters:
       - multiply: 0.001  # Wh to kWh
       - delta: 0.001  # Only publish when there's at least 1 Wh of difference
+
+  - platform: integration
+    name: "Total Energy"
+    sensor: sensor_power_raw
+    time_unit: h
+    state_class: total_increasing
+    device_class: energy
+    unit_of_measurement: kWh
+    accuracy_decimals: 3
+    restore: true
+    filters:
+      - multiply: 0.001  # Wh to kWh
+      - delta: 0.001  # Only publish when there's at least 1 Wh of difference
