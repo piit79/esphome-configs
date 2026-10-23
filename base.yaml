@@ -29,10 +29,10 @@ sensor:
     id: sensor_uptime
     name: "Uptime"
     unit_of_measurement: d
-    update_interval: 860s  # 0.01 * 1440 min = 14.4 min = 864 s
+    update_interval: 865s  # 0.01 * 1440 min = 14.4 min = 864 s
     accuracy_decimals: 2
     filters:
-      - multiply: 0.000011574
+      - multiply: 0.000011574  # Convert seconds to days
 
   - platform: wifi_signal
     id: sensor_wifi_signal

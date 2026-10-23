@@ -85,9 +85,6 @@ number:
     step: 1
     optimistic: true
     restore_value: true
-    on_value:
-      then:
-        - lambda: id(device_running).set_upper_threshold(x);
 
   - platform: template
     id: on_delay
@@ -110,9 +107,6 @@ number:
     step: 1
     optimistic: true
     restore_value: true
-    on_value:
-      then:
-        - lambda: id(device_running).set_lower_threshold(x);
 
   - platform: template
     id: off_delay
@@ -141,8 +135,8 @@ binary_sensor:
     name: "Device Running"
     sensor_id: sensor_power_raw
     threshold:
-      upper: 3000
-      lower: 0
+      upper: !lambda "return id(on_power).state;"
+      lower: !lambda "return id(off_power).state;"
     filters:
       - delayed_on: !lambda "return id(on_delay).state * 1000;"
       - delayed_off: !lambda "return id(off_delay).state * 1000;"
